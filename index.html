@@ -55,60 +55,23 @@
                     </div>
                 </div>
             </section>
-
-           <section class="portal-selector-section">
+<section class="portal-selector-section">
                 <h3>Select Your Portal to Get Started</h3>
                 <div class="portal-cards">
-                    <div class="portal-card" id="select-rider-card">
+                    <!-- RIDER PORTAL -->
+                    <div class="portal-card" id="select-rider-card" onclick="navigateTo('view-rider')" style="cursor: pointer;">
                         <div class="portal-icon">🏍️</div>
                         <h4>Rider Portal</h4>
                         <p>Search stations, swap batteries, top up your wallet, and track your travel mileage.</p>
-                        
-                        <form id="driver-registration-form" class="form-vertical" style="margin-top: 15px; text-align: left;">
-                            <div class="form-group-app">
-                                <label for="reg-driver-name">Driver Name</label>
-                                <input type="text" id="reg-driver-name" placeholder="e.g., Kamau" required>
-                            </div>
-                            <div class="form-group-app">
-                                <label for="reg-driver-phone">Phone Number</label>
-                                <input type="tel" id="reg-driver-phone" placeholder="e.g., 0712345678" required>
-                            </div>
-                            <div class="form-group-app">
-                                <label for="reg-driver-vehicle">Vehicle Fleet Type</label>
-                                <select id="reg-driver-vehicle">
-                                    <option value="boda_boda">Boda Boda (Electric Motorcycle)</option>
-                                    <option value="tuk_tuk">Tuk-Tuk (Three-Wheeler)</option>
-                                </select>
-                            </div>
-                            <button type="submit" class="btn btn-accent btn-block">Enter as Driver</button>
-                        </form>
+                        <button class="btn btn-accent btn-block" style="margin-top: 20px;">Enter as Driver (Demo)</button>
                     </div>
 
-                    <div class="portal-card" id="select-host-card">
+                    <!-- SOLAR KIOSK HOST -->
+                    <div class="portal-card" id="select-host-card" onclick="navigateTo('view-host')" style="cursor: pointer;">
                         <div class="portal-icon">🏠</div>
                         <h4>Solar Kiosk Host</h4>
                         <p>Register solar arrays, manage charging racks, set rates, and earn Mobile Money payouts.</p>
-                        
-                        <form id="host-registration-form" class="form-vertical" style="margin-top: 15px; text-align: left;">
-                            <div class="form-group-app">
-                                <label for="reg-host-name">Kiosk Shop Name</label>
-                                <input type="text" id="reg-host-name" placeholder="e.g., Mama Cynthia's Solar Kiosk" required>
-                            </div>
-                            <div class="form-group-app">
-                                <label for="reg-host-landmark">Landmark / Directions Guide</label>
-                                <input type="text" id="reg-host-landmark" placeholder="e.g., Nairobi West, next to Airtel pole" required>
-                            </div>
-                            <div class="form-group-app">
-                                <label for="reg-host-location">District Location Hub</label>
-                                <select id="reg-host-location">
-                                    <option value="nairobi_west">Nairobi West</option>
-                                    <option value="cbd">Nairobi CBD</option>
-                                    <option value="kilimani">Kilimani</option>
-                                    <option value="karen">Karen</option>
-                                </select>
-                            </div>
-                            <button type="submit" class="btn btn-primary btn-block">Enter as Kiosk Host</button>
-                        </form>
+                        <button class="btn btn-primary btn-block" style="margin-top: 20px;">Enter as Kiosk Host (Demo)</button>
                     </div>
                 </div>
             </section>
