@@ -1,134 +1,160 @@
-// Kika-Charge Application Logic & State Simulation
+// Kika-Charge Web Application Engine & State Manager
 
-// 1. DATABASE OF DECENTRALIZED KIOSKS (Offline Cached database)
-// Mock coordinates & reference locations in Nairobi.
-const kiosksDatabase = [
+// ==================== 1. DATABASE & INITIAL STATE SCHEMAS ====================
+
+const DEFAULT_KIOSKS = [
     {
         id: "kio_mama_cynthia",
         name: "Mama Cynthia's Solar Kiosk",
         locationId: "nairobi_west",
-        distance: 120, // meters
         landmark: "📍 Nairobi West, next to Airtel pole",
-        batteriesAvailable: 4,
-        chargingPortsOpen: 2,
+        online: true,
+        basePrice: 150,
         solarActive: true,
         solarCapacityKW: 5.5,
-        rating: "Verified Partner ⭐",
-        basePrice: 150
+        earningsToday: 1320.00,
+        momoBalance: 3840.00,
+        rackSlots: [
+            { id: 1, pct: 100, status: "ready" },
+            { id: 2, pct: 72, status: "charging" },
+            { id: 3, pct: 0, status: "empty" },
+            { id: 4, pct: 100, status: "ready" },
+            { id: 5, pct: 35, status: "charging" },
+            { id: 6, pct: 12, status: "low" }
+        ]
     },
     {
         id: "kio_kamau_shop",
-        name: "Kamau Electronics & Solar Swap",
+        name: "Kamau Electronics & Swap",
         locationId: "nairobi_west",
-        distance: 310,
         landmark: "📍 Behind Shell Petrol Station",
-        batteriesAvailable: 2,
-        chargingPortsOpen: 4,
+        online: true,
+        basePrice: 140,
         solarActive: true,
         solarCapacityKW: 8.0,
-        rating: "Verified Partner ⭐",
-        basePrice: 140
+        earningsToday: 480.00,
+        momoBalance: 1200.00,
+        rackSlots: [
+            { id: 1, pct: 100, status: "ready" },
+            { id: 2, pct: 100, status: "ready" },
+            { id: 3, pct: 85, status: "charging" },
+            { id: 4, pct: 0, status: "empty" }
+        ]
     },
     {
         id: "kio_matatu_hub",
-        name: "Langata Matatu Stage Power Kiosk",
+        name: "Langata Matatu Stage Power",
         locationId: "nairobi_west",
-        distance: 490,
         landmark: "📍 Next to boda-boda stage entrance",
-        batteriesAvailable: 5,
-        chargingPortsOpen: 1,
-        solarActive: false, // On grid mode
+        online: true,
+        basePrice: 160,
+        solarActive: false,
         solarCapacityKW: 0,
-        rating: "Standard Kiosk ⚡",
-        basePrice: 160
+        earningsToday: 2400.00,
+        momoBalance: 840.00,
+        rackSlots: [
+            { id: 1, pct: 100, status: "ready" },
+            { id: 2, pct: 24, status: "low" }
+        ]
     },
     {
         id: "kio_cbd_express",
         name: "CBD Boda Swap & Go",
         locationId: "cbd",
-        distance: 90,
         landmark: "📍 Ronald Ngala St, opposite Naivas",
-        batteriesAvailable: 6,
-        chargingPortsOpen: 0,
+        online: true,
+        basePrice: 170,
         solarActive: false,
         solarCapacityKW: 0,
-        rating: "Express Station ⚡",
-        basePrice: 170
+        earningsToday: 3200.00,
+        momoBalance: 900.00,
+        rackSlots: [
+            { id: 1, pct: 100, status: "ready" },
+            { id: 2, pct: 100, status: "ready" }
+        ]
     },
     {
         id: "kio_solar_karen_01",
-        name: "Karen Green Charging",
+        name: "Karen Green Charging Hub",
         locationId: "karen",
-        distance: 250,
         landmark: "📍 Karen Shopping Center, back alley",
-        batteriesAvailable: 5,
-        chargingPortsOpen: 3,
+        online: true,
+        basePrice: 130,
         solarActive: true,
         solarCapacityKW: 12.0,
-        rating: "Premium Solar Hub ⭐",
-        basePrice: 130
-    },
-    {
-        id: "kio_mama_lucy",
-        name: "Lucy's Market Stand Charging",
-        locationId: "kilimani",
-        distance: 180,
-        landmark: "📍 Kilimani Organic Market, Stall 14",
-        batteriesAvailable: 3,
-        chargingPortsOpen: 3,
-        solarActive: true,
-        solarCapacityKW: 4.5,
-        rating: "Verified Partner ⭐",
-        basePrice: 150
+        earningsToday: 950.00,
+        momoBalance: 2400.00,
+        rackSlots: [
+            { id: 1, pct: 100, status: "ready" },
+            { id: 2, pct: 100, status: "ready" },
+            { id: 3, pct: 92, status: "charging" },
+            { id: 4, pct: 45, status: "charging" }
+        ]
     }
 ];
 
-// 2. APP STATE GLOBAL VARIABLE
-const state = {
-    currentRole: "driver", // driver | host
-    selectedLocationId: "nairobi_west",
-    solarIntensity: 85, // 0 to 100
-    
-    driver: {
-        id: "drv_204",
-        name: "Rider #204 - Kamau",
-        wallet: 420.00,
-        battery: 14,
-        range: 9, // km
-        currentSelectedKiosk: null
-    },
-
-    host: {
-        id: "kio_mama_cynthia",
-        name: "Mama Cynthia's Solar Kiosk",
-        landmark: "📍 Nairobi West, next to Airtel pole",
-        online: true,
-        solarKW: 4.2,
-        basePrice: 150,
-        earningsToday: 1320.00,
-        momoBalance: 3840.00,
-        // Represents physical state of charging bays
-        rackSlots: [
-            { id: 1, pct: 100, status: "ready" },      // Ready for driver swap
-            { id: 2, pct: 78, status: "charging" },   // Currently solar charging
-            { id: 3, pct: 0, status: "empty" },        // Swapped out / vacant slot
-            { id: 4, pct: 100, status: "ready" },      // Ready for driver swap
-            { id: 5, pct: 42, status: "charging" },   // Solar charging
-            { id: 6, pct: 12, status: "low" }          // Grid backup charging
-        ]
-    },
-
-    activeSwap: null
+const DEFAULT_DRIVER = {
+    id: "drv_204",
+    name: "Rider #204 - Kamau",
+    wallet: 420.00,
+    battery: 14,
+    range: 9, // km
+    currentLocation: "nairobi_west"
 };
 
-// 3. TELEMETRY LOGGING UTILITIES
+const DEFAULT_TRANSACTIONS = [
+    { id: "TXN_8F9D01", type: "swap", station: "Mama Cynthia's Solar Kiosk", amount: 120, date: "2026-06-03 11:32" },
+    { id: "TXN_7E4D12", type: "topup", phone: "0712345678", amount: 300, date: "2026-06-03 09:15" }
+];
+
+// Local state tracking variables (runtime cache)
+let kiosks = [];
+let driver = {};
+let transactions = [];
+let solarIntensity = 85; // Percent intensity index
+
+let activeSwapState = null;
+
+// ==================== 2. LOCALSTORAGE STORAGE CONTROLLERS ====================
+
+function initDatabase() {
+    if (!localStorage.getItem("kika_kiosks")) {
+        localStorage.setItem("kika_kiosks", JSON.stringify(DEFAULT_KIOSKS));
+    }
+    if (!localStorage.getItem("kika_driver")) {
+        localStorage.setItem("kika_driver", JSON.stringify(DEFAULT_DRIVER));
+    }
+    if (!localStorage.getItem("kika_transactions")) {
+        localStorage.setItem("kika_transactions", JSON.stringify(DEFAULT_TRANSACTIONS));
+    }
+
+    // Load into runtime memory
+    kiosks = JSON.parse(localStorage.getItem("kika_kiosks"));
+    driver = JSON.parse(localStorage.getItem("kika_driver"));
+    transactions = JSON.parse(localStorage.getItem("kika_transactions"));
+}
+
+function saveKiosksToDB() {
+    localStorage.setItem("kika_kiosks", JSON.stringify(kiosks));
+}
+
+function saveDriverToDB() {
+    localStorage.setItem("kika_driver", JSON.stringify(driver));
+}
+
+function saveTransactionsToDB() {
+    localStorage.setItem("kika_transactions", JSON.stringify(transactions));
+}
+
+// ==================== 3. TELEMETRY SERIALIZER & DEBUGGER ====================
+
 function logConsole(message, type = "system") {
-    const consoleOutput = document.getElementById("console-output");
+    const consoleOutput = document.getElementById("footer-console-log");
     if (!consoleOutput) return;
 
     const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     const logDiv = document.createElement("div");
-    logDiv.className = `log-entry ${type}-log`;
+    logDiv.className = `c-log ${type}-log`;
     logDiv.textContent = `[${time}] ${message}`;
     
     consoleOutput.appendChild(logDiv);
@@ -139,28 +165,13 @@ function updateTelemetrySize(packetText) {
     const sizeBytes = new Blob([packetText]).size;
     const sizeKB = (sizeBytes / 1024).toFixed(3);
     
-    const sizeEl = document.getElementById("telemetry-size");
-    const barEl = document.getElementById("telemetry-bar");
-    const savedEl = document.getElementById("data-saved-pct");
-
-    if (sizeEl) sizeEl.textContent = `${sizeKB} KB (${sizeBytes} bytes)`;
-    
-    // Max SMS/UDP budget is 2 KB (2048 bytes)
-    const pct = Math.min((sizeBytes / 2048) * 100, 100);
-    if (barEl) {
-        barEl.style.width = `${pct}%`;
-        // Color scale
-        if (pct < 10) barEl.style.backgroundColor = "var(--energy-green)";
-        else if (pct < 50) barEl.style.backgroundColor = "var(--solar-yellow)";
-        else barEl.style.backgroundColor = "var(--danger)";
+    const sizeEl = document.getElementById("footer-data-pkg-lbl");
+    if (sizeEl) {
+        sizeEl.textContent = `Packet: ${sizeBytes} B (${sizeKB} KB)`;
     }
-
-    // Compare with average Map API size (~3.2 MB)
-    const savedPct = (100 - (sizeBytes / (3.2 * 1024 * 1024)) * 100).toFixed(2);
-    if (savedEl) savedEl.textContent = `Saved: ${savedPct}%`;
 }
 
-// Compact text serializer (delimiter-based, simulating low-bandwidth UDP/SMS protocols)
+// Delimiter-based serialization (Kika Protocol: Action|Param1:Val|Param2:Val)
 function serializePacket(action, params) {
     let packet = `KIKA:${action}`;
     for (const [key, value] of Object.entries(params)) {
@@ -169,366 +180,693 @@ function serializePacket(action, params) {
     return packet;
 }
 
-// 4. COMPUTATIONS
+// ==================== 4. REAL-TIME CHARGING SIMULATOR (ticker loop) ====================
+
+function startBackgroundChargingTicker() {
+    // Battery rack charges incrementally every 3 seconds
+    setInterval(() => {
+        let databaseChanged = false;
+
+        kiosks.forEach(k => {
+            // Charging speed depends on solar active and current solar output
+            if (!k.online) return;
+
+            let solarChargeSpeed = 1; // Default grid rate
+            if (k.solarActive) {
+                // High solar intensity accelerates charging rates
+                if (solarIntensity > 75) solarChargeSpeed = 4;
+                else if (solarIntensity > 40) solarChargeSpeed = 2;
+                else solarChargeSpeed = 1;
+            }
+
+            k.rackSlots.forEach(slot => {
+                if (slot.status === "charging" || slot.status === "low") {
+                    slot.pct += solarChargeSpeed;
+                    
+                    if (slot.pct >= 100) {
+                        slot.pct = 100;
+                        slot.status = "ready";
+                        
+                        logConsole(`[SYSTEM] Bay 0${slot.id} at ${k.name} has finished charging to 100%.`, "rx");
+                    }
+                    databaseChanged = true;
+                }
+            });
+        });
+
+        if (databaseChanged) {
+            saveKiosksToDB();
+            // Re-render depending on which view is currently active
+            if (!document.getElementById("view-host").classList.contains("hidden")) {
+                renderHostRack();
+            }
+            if (!document.getElementById("view-rider").classList.contains("hidden")) {
+                renderRiderStations();
+            }
+        }
+    }, 3000);
+}
+
+// ==================== 5. COMPUTATIONAL LOGICS ====================
+
 function getDynamicPrice(kiosk) {
     if (!kiosk.solarActive) return kiosk.basePrice;
     
-    // Price scales down as solar intensity goes up (surplus supply)
-    // At 100% solar intensity, discount is 30%
-    const discountFactor = (state.solarIntensity / 100) * 0.30;
-    const finalPrice = Math.round(kiosk.basePrice * (1 - discountFactor));
-    return finalPrice;
+    // Scale discount dynamically: 30% off during peak solar production (100% intensity)
+    const discount = (solarIntensity / 100) * 0.30;
+    return Math.round(kiosk.basePrice * (1 - discount));
 }
 
-// 5. DRIVER VIEW RENDER
-function renderKiosks() {
-    const listContainer = document.getElementById("kiosk-list");
+function countAvailableBatteries(kiosk) {
+    return kiosk.rackSlots.filter(s => s.status === "ready").length;
+}
+
+function showToast(message, type = "success") {
+    const toast = document.getElementById("global-toast");
+    if (!toast) return;
+
+    toast.textContent = message;
+    toast.className = `toast ${type === "error" ? "error-toast" : ""}`;
+    toast.classList.remove("hidden");
+
+    setTimeout(() => {
+        toast.classList.add("hidden");
+    }, 3000);
+}
+
+// ==================== 6. RENDERING COMPONENTS ====================
+
+// RIDER PORTAL: Render kiosks list
+function renderRiderStations() {
+    const listContainer = document.getElementById("rider-stations-list");
+    const locationFilter = document.getElementById("station-filter-location").value;
+    const searchVal = document.getElementById("station-search-input").value.toLowerCase();
+
     if (!listContainer) return;
-
     listContainer.innerHTML = "";
-    
-    // Filter kiosks by currently selected simulated location
-    const localKiosks = kiosksDatabase.filter(k => k.locationId === state.selectedLocationId);
 
-    // Sync Mama Cynthia's online status with Host panel
-    const mamaC = localKiosks.find(k => k.id === "kio_mama_cynthia");
-    if (mamaC) {
-        mamaC.online = state.host.online;
+    // Load current online kiosks
+    const activeKiosks = kiosks.filter(k => k.online);
+
+    // Apply search filters
+    const filtered = activeKiosks.filter(k => {
+        const matchesLocation = locationFilter === "all" || k.locationId === locationFilter;
+        const matchesSearch = k.name.toLowerCase().includes(searchVal) || k.landmark.toLowerCase().includes(searchVal);
+        return matchesLocation && matchesSearch;
+    });
+
+    if (filtered.length === 0) {
+        listContainer.innerHTML = `<div class="ledger-empty">No active stations found matching your search.</div>`;
+        return;
     }
 
-    // Sort by distance
-    localKiosks.sort((a, b) => a.distance - b.distance);
-
-    localKiosks.forEach(k => {
-        // Skip rendering if offline (unless it's standard grid kiosk always on)
-        if (k.id === "kio_mama_cynthia" && !state.host.online) {
-            return;
+    filtered.forEach(k => {
+        const price = getDynamicPrice(k);
+        const availCount = countAvailableBatteries(k);
+        const isSolarActive = k.solarActive && solarIntensity > 35;
+        
+        // Calculate dynamic mock distance relative to driver location
+        let distance = 250;
+        if (k.locationId !== driver.currentLocation) {
+            distance = 1800; // farther away
+        } else {
+            // Assign different distance offsets
+            if (k.id === "kio_mama_cynthia") distance = 120;
+            else if (k.id === "kio_kamau_shop") distance = 310;
+            else if (k.id === "kio_matatu_hub") distance = 490;
         }
 
-        const price = getDynamicPrice(k);
-        const isSolarActive = k.solarActive && state.solarIntensity > 30;
-
         const card = document.createElement("div");
-        card.className = "kiosk-card";
-        card.onclick = () => selectKioskForSwap(k);
+        card.className = "station-card";
+        card.onclick = () => selectStationForSwap(k);
 
         card.innerHTML = `
-            <div class="kiosk-card-header">
-                <div class="kiosk-title-box">
-                    <h4>${k.name} <span class="verified-icon">✓</span></h4>
-                    <span class="landmark-text">${k.landmark}</span>
+            <div class="station-card-header">
+                <div class="station-info">
+                    <h4>${k.name} <span style="color:var(--energy-green);">✓</span></h4>
+                    <p>${k.landmark}</p>
                 </div>
-                <span class="distance-badge">${k.distance}m</span>
+                <span class="station-dist-badge">${distance}m</span>
             </div>
-            <div class="kiosk-card-body">
-                <div class="stat-item">
-                    <span class="stat-label">Full Batteries</span>
-                    <span class="stat-value text-green">${k.id === "kio_mama_cynthia" ? countReadyHostBatteries() : k.batteriesAvailable} Ready</span>
+            <div class="station-card-body">
+                <div class="station-meta-col">
+                    <span class="meta-lbl">Batteries</span>
+                    <span class="meta-val ${availCount > 0 ? 'text-green' : 'text-danger'}">${availCount} Ready</span>
                 </div>
-                <div class="stat-item">
-                    <span class="stat-label">Charging Slots</span>
-                    <span class="stat-value">${k.chargingPortsOpen} Open</span>
+                <div class="station-meta-col">
+                    <span class="meta-lbl">Empty Slots</span>
+                    <span class="meta-val">${k.rackSlots.filter(s => s.status === 'empty').length} Available</span>
                 </div>
-                <div class="stat-item text-right">
-                    ${isSolarActive ? `<span class="solar-pill">☀️ Solar Peak</span>` : `<span class="solar-pill" style="background:rgba(255,255,255,0.05); color:var(--text-muted); border:1px solid var(--border-color)">🔌 Grid Mode</span>`}
-                    <span class="swap-price">KES ${price}</span>
+                <div class="station-meta-col text-right">
+                    ${isSolarActive ? `<span class="solar-badge-pill">☀️ Solar Peak</span>` : `<span class="grid-badge-pill">🔌 Grid Mode</span>`}
+                    <span class="price-text-glow">KES ${price}</span>
                 </div>
             </div>
-            <button class="btn btn-accent btn-block" style="margin-top: 4px;">⚡ Swap Battery Here</button>
+            <button class="btn btn-accent btn-block btn-sm" style="margin-top: 4px;">⚡ Confirm Swap</button>
         `;
         listContainer.appendChild(card);
     });
 }
 
-function countReadyHostBatteries() {
-    return state.host.rackSlots.filter(s => s.status === "ready").length;
+// RIDER PORTAL: Render transaction logs
+function renderRiderLedger() {
+    const container = document.getElementById("rider-ledger-list");
+    if (!container) return;
+
+    container.innerHTML = "";
+    
+    // Sort transactions by date descending
+    const riderTxs = transactions.filter(t => t.type === "swap" || t.type === "topup");
+    
+    if (riderTxs.length === 0) {
+        container.innerHTML = `<div class="ledger-empty">No transactions recorded.</div>`;
+        return;
+    }
+
+    riderTxs.forEach(t => {
+        const item = document.createElement("div");
+        item.className = "ledger-item";
+
+        if (t.type === "swap") {
+            item.innerHTML = `
+                <div class="ledger-meta">
+                    <span class="ledger-title">Battery Swap</span>
+                    <span class="ledger-sub">${t.station} • ${t.date}</span>
+                </div>
+                <span class="ledger-amt spend">- KES ${t.amount}</span>
+            `;
+        } else {
+            item.innerHTML = `
+                <div class="ledger-meta">
+                    <span class="ledger-title">Wallet Top-Up</span>
+                    <span class="ledger-sub">Via MoMo Number ${t.phone}</span>
+                </div>
+                <span class="ledger-amt earn">+ KES ${t.amount}</span>
+            `;
+        }
+        container.appendChild(item);
+    });
 }
 
-// 6. HOST VIEW RENDER
-function renderRack() {
-    const rackContainer = document.getElementById("battery-rack-grid");
-    if (!rackContainer) return;
+// HOST PORTAL: Render bays
+function renderHostRack() {
+    const container = document.getElementById("host-battery-rack");
+    if (!container) return;
 
-    rackContainer.innerHTML = "";
+    container.innerHTML = "";
 
-    state.host.rackSlots.forEach(slot => {
-        const slotDiv = document.createElement("div");
-        slotDiv.className = `rack-slot slot-state-${slot.status}`;
-        slotDiv.onclick = () => toggleSlotState(slot.id);
+    const activeHost = kiosks.find(k => k.id === "kio_mama_cynthia");
+    if (!activeHost) return;
 
-        let statusText = "Vacant";
-        if (slot.status === "ready") statusText = "Ready";
-        else if (slot.status === "charging") statusText = "Charging";
-        else if (slot.status === "low") statusText = "Low Cell";
+    activeHost.rackSlots.forEach(slot => {
+        const bay = document.createElement("div");
+        bay.className = `host-rack-slot slot-${slot.status}`;
+        bay.onclick = () => manageHostSlot(slot.id);
 
-        slotDiv.innerHTML = `
-            <span class="slot-num">BAY 0${slot.id}</span>
-            <div class="slot-battery">
-                <div class="slot-battery-fill" style="width: ${slot.pct}%;"></div>
+        let statusTxt = "Empty Bay";
+        if (slot.status === "ready") statusTxt = "100% Ready";
+        else if (slot.status === "charging") statusTxt = "Charging";
+        else if (slot.status === "low") statusTxt = "Low Cell";
+
+        bay.innerHTML = `
+            <span class="host-slot-num">BAY 0${slot.id}</span>
+            <div class="host-slot-battery-box">
+                <div class="host-slot-battery-fill" style="width: ${slot.pct}%;"></div>
             </div>
-            <span class="slot-pct">${slot.pct}%</span>
-            <span class="slot-status-lbl">${statusText}</span>
+            <span class="host-slot-pct">${slot.pct}%</span>
+            <span class="host-slot-status">${statusTxt}</span>
         `;
-        rackContainer.appendChild(slotDiv);
+        container.appendChild(bay);
     });
 
-    // Update solar generation and price tags based on solar intensity
-    const solarKWVal = ((state.solarIntensity / 100) * 5.0).toFixed(1);
-    state.host.solarKW = parseFloat(solarKWVal);
-    
-    document.getElementById("host-solar-kw").textContent = `${state.host.solarKW} kW`;
-    
-    const calculatedPrice = getDynamicPrice(state.host);
-    document.getElementById("host-current-price").textContent = `KES ${calculatedPrice}`;
+    // Update solar capacities
+    const outputKW = ((solarIntensity / 100) * activeHost.solarCapacityKW).toFixed(1);
+    document.getElementById("host-solar-output-kw").textContent = `${outputKW} kW`;
+    document.getElementById("host-calculated-price").textContent = `KES ${getDynamicPrice(activeHost)}`;
 }
 
-function toggleSlotState(slotId) {
-    const slot = state.host.rackSlots.find(s => s.id === slotId);
-    if (!slot) return;
+// HOST PORTAL: Render activity logs
+function renderHostLedger() {
+    const container = document.getElementById("host-ledger-list");
+    if (!container) return;
 
-    // Toggle logic: ready -> charging -> low -> empty -> ready
-    if (slot.status === "ready") {
-        slot.status = "charging";
-        slot.pct = 45;
-    } else if (slot.status === "charging") {
-        slot.status = "low";
-        slot.pct = 12;
-    } else if (slot.status === "low") {
-        slot.status = "empty";
-        slot.pct = 0;
-    } else {
-        slot.status = "ready";
-        slot.pct = 100;
+    container.innerHTML = "";
+
+    const activeHost = kiosks.find(k => k.id === "kio_mama_cynthia");
+    if (!activeHost) return;
+
+    // Filter transaction logs relevant to this station
+    const logs = transactions.filter(t => (t.type === "swap" && t.station === activeHost.name) || t.type === "withdrawal");
+
+    if (logs.length === 0) {
+        container.innerHTML = `<div class="ledger-empty">No activity logs recorded.</div>`;
+        return;
     }
-    
-    renderRack();
-    renderKiosks();
-    
-    logConsole(`[HOST] Manually toggled Bay 0${slotId} state to ${slot.status.toUpperCase()} (${slot.pct}%)`, "system");
+
+    logs.forEach(t => {
+        const item = document.createElement("div");
+        item.className = "ledger-item";
+
+        if (t.type === "swap") {
+            item.innerHTML = `
+                <div class="ledger-meta">
+                    <span class="ledger-title">Driver Swap Received</span>
+                    <span class="ledger-sub">ID: ${t.id} • ${t.date}</span>
+                </div>
+                <span class="ledger-amt earn">+ KES ${t.amount}</span>
+            `;
+        } else {
+            item.innerHTML = `
+                <div class="ledger-meta">
+                    <span class="ledger-title">MoMo Withdrawal</span>
+                    <span class="ledger-sub">To Mobile Number: ${t.phone}</span>
+                </div>
+                <span class="ledger-amt spend">- KES ${t.amount}</span>
+            `;
+        }
+        container.appendChild(item);
+    });
 }
 
-// 7. INTERACTIVE FLOW HANDLERS
+// ==================== 7. DYNAMIC SWAP FLOW CONTROLLER ====================
 
-// Select a kiosk as a driver
-function selectKioskForSwap(kiosk) {
-    state.driver.currentSelectedKiosk = kiosk;
+function selectStationForSwap(kiosk) {
+    // Check if station has any ready batteries
+    const readyCount = countAvailableBatteries(kiosk);
+    if (readyCount === 0) {
+        showToast("No fully charged batteries available at this station. Select another station.", "error");
+        logConsole(`[ERROR] Swap request failed. ${kiosk.name} has 0 ready batteries.`, "error");
+        return;
+    }
+
     const price = getDynamicPrice(kiosk);
-    
-    // Simulate telemetry ping broadcast: check latest real-time status of this kiosk
-    const pingParams = {
-        DRV: state.driver.id,
-        LOC: state.selectedLocationId,
+
+    // Verify driver has enough wallet balance
+    if (driver.wallet < price) {
+        showToast("Insufficient M-Pesa balance. Please top up your wallet first.", "error");
+        return;
+    }
+
+    activeSwapState = {
+        kioskId: kiosk.id,
+        kioskName: kiosk.name,
+        price: price
+    };
+
+    // Serialize Query Request
+    const queryPkg = {
+        DRV: driver.id,
+        LOC: driver.currentLocation,
         CHK_KIO: kiosk.id
     };
-    const packet = serializePacket("QUERY_STATION", pingParams);
-    
-    logConsole(`[TX] Broadcasting status request: ${packet}`, "tx");
+    const packet = serializePacket("QUERY_STATION", queryPkg);
+    logConsole(`[TX] Pinging kiosk telemetry: ${packet}`, "tx");
     updateTelemetrySize(packet);
 
-    // Simulate response delay (~300ms)
+    // Spawn Checkout
     setTimeout(() => {
-        const respParams = {
+        const respPkg = {
             KIO: kiosk.id,
-            STAT: state.host.online ? "ONLINE" : "OFFLINE",
-            BATT_QTY: kiosk.id === "kio_mama_cynthia" ? countReadyHostBatteries() : kiosk.batteriesAvailable,
-            PRICE: price
+            ONLINE: "YES",
+            BATT_READY: readyCount,
+            SWAP_FEE: price
         };
-        const respPacket = serializePacket("STATUS_RESP", respParams);
-        logConsole(`[RX] Received data packet: ${respPacket}`, "rx");
+        const respPacket = serializePacket("RESP_STATION", respPkg);
+        logConsole(`[RX] Received response: ${respPacket}`, "rx");
         updateTelemetrySize(respPacket);
-        
-        // Show Mobile Money popup
-        showMomoModal(kiosk, price);
+
+        // Open M-Pesa Authorization Popup
+        document.getElementById("momo-kiosk-name").textContent = kiosk.name;
+        document.getElementById("momo-pay-val").textContent = `KES ${price}.00`;
+        document.getElementById("modal-momo-pay").classList.remove("hidden");
+        document.getElementById("momo-auth-pin").value = "";
+        document.getElementById("momo-auth-pin").focus();
     }, 400);
 }
 
-// Show MoMo Checkout Modal
-function showMomoModal(kiosk, price) {
-    const modal = document.getElementById("momo-modal");
-    const amountEl = document.getElementById("momo-charge-amount");
-    const descEl = document.getElementById("momo-charge-description");
-    
-    amountEl.textContent = `KES ${price}.00`;
-    descEl.textContent = `Battery Swap Code #${Math.floor(Math.random() * 9000) + 1000} at ${kiosk.name}`;
-    
-    modal.classList.remove("hidden");
-    document.getElementById("momo-pin").value = "";
-    document.getElementById("momo-pin").focus();
-}
-
-// Hide MoMo Checkout Modal
-function hideMomoModal() {
-    document.getElementById("momo-modal").classList.add("hidden");
-}
-
-// Handle MoMo Authorization Confirm
-function handleMomoSubmit() {
-    const pinVal = document.getElementById("momo-pin").value;
+function processMomoAuthorization() {
+    const pinVal = document.getElementById("momo-auth-pin").value;
     if (pinVal.length < 4) {
         alert("Please enter a valid 4-digit PIN.");
         return;
     }
 
-    hideMomoModal();
-
-    const kiosk = state.driver.currentSelectedKiosk;
-    const price = getDynamicPrice(kiosk);
-
-    // Setup active swap transaction state
-    state.activeSwap = {
-        kiosk: kiosk,
-        price: price,
-        step: 1
-    };
-
-    // Serialize payment request telemetry packet
-    const payParams = {
-        DRV: state.driver.id,
-        KIO: kiosk.id,
-        AMT: price,
-        MOMO_REF: "TXN_" + Math.random().toString(36).substr(2, 9).toUpperCase()
-    };
-    const packet = serializePacket("MOMO_PAY_REQ", payParams);
+    document.getElementById("modal-momo-pay").classList.add("hidden");
     
-    logConsole(`[TX] Mobile Money Authorization sent: ${packet}`, "tx");
+    // Spawn Swap progress modal
+    document.getElementById("progress-station-title").textContent = activeSwapState.kioskName;
+    document.getElementById("modal-swap-progress").classList.remove("hidden");
+
+    // Telemetry request
+    const payParams = {
+        DRV: driver.id,
+        KIO: activeSwapState.kioskId,
+        VAL: activeSwapState.price,
+        TX_REF: "MOMO_" + Math.random().toString(36).substr(2, 8).toUpperCase()
+    };
+    const packet = serializePacket("AUTH_PAYMENT", payParams);
+    logConsole(`[TX] Authorizing wallet transaction: ${packet}`, "tx");
     updateTelemetrySize(packet);
 
-    // Open Progress screen
-    const progressModal = document.getElementById("swap-progress-modal");
-    progressModal.classList.remove("hidden");
-    
-    document.getElementById("swap-progress-kiosk").textContent = kiosk.name;
-    document.getElementById("swap-phase-lbl").textContent = "Awaiting Kiosk Approval...";
-    
-    const stepPayment = document.getElementById("step-payment");
-    const stepApproval = document.getElementById("step-approval");
-    const stepSwap = document.getElementById("step-swap");
+    // Progress flow stages
+    const step1 = document.getElementById("chk-step-1");
+    const step2 = document.getElementById("chk-step-2");
+    const step3 = document.getElementById("chk-step-3");
+    const phaseLabel = document.getElementById("progress-phase-msg");
 
-    stepPayment.className = "swap-step active";
-    stepApproval.className = "swap-step";
-    stepSwap.className = "swap-step";
+    step1.className = "checkpoint-item active";
+    step2.className = "checkpoint-item";
+    step3.className = "checkpoint-item";
+    phaseLabel.textContent = "Unlocking battery slot...";
 
-    // Dynamic Step Simulation
     setTimeout(() => {
-        // Step 2: Kiosk approves swap
-        state.activeSwap.step = 2;
-        stepApproval.className = "swap-step active";
-        document.getElementById("swap-phase-lbl").textContent = "Unlocking battery slot...";
-        
-        // Show simulation shortcut for kiosk approval if Mama Cynthia (the simulated host) is selected
-        const simHostBtn = document.getElementById("swap-host-sim-actions");
-        if (kiosk.id === "kio_mama_cynthia") {
-            simHostBtn.classList.remove("hidden");
+        // Step 2: Unlocking slot
+        step2.className = "checkpoint-item active";
+        phaseLabel.textContent = "Remove dead battery and insert fully charged cell...";
+
+        // If the swap is happening at Mama Cynthia's Solar Kiosk (the simulated host portal),
+        // we can prompt a simulation bypass button so the user can click to confirm the physical action.
+        if (activeSwapState.kioskId === "kio_mama_cynthia") {
+            document.getElementById("host-sim-actions-prompt").classList.remove("hidden");
         } else {
-            // Auto approve for other mock kiosks
-            setTimeout(executePhysicalSwap, 1500);
+            // Auto complete for other background shops
+            setTimeout(() => {
+                step3.className = "checkpoint-item active";
+                phaseLabel.textContent = "Finalizing swap handshake...";
+                setTimeout(finalizePhysicalSwap, 1000);
+            }, 2000);
         }
     }, 1200);
 }
 
-// Step 3: Run swap
-function executePhysicalSwap() {
-    document.getElementById("swap-host-sim-actions").classList.add("hidden");
-    
-    const stepSwap = document.getElementById("step-swap");
-    stepSwap.className = "swap-step active";
-    document.getElementById("swap-phase-lbl").textContent = "Swap complete! Drive safely.";
-    
-    setTimeout(() => {
-        completeTransaction();
-    }, 1000);
-}
+function finalizePhysicalSwap() {
+    document.getElementById("host-sim-actions-prompt").classList.add("hidden");
+    document.getElementById("modal-swap-progress").classList.add("hidden");
 
-// Step 4: Finalize transactions and show success
-function completeTransaction() {
-    const swap = state.activeSwap;
+    const swap = activeSwapState;
     if (!swap) return;
 
-    // Deduct wallet from driver
-    state.driver.wallet -= swap.price;
-    if (state.driver.wallet < 0) state.driver.wallet = 0;
-    
-    // Reset driver battery ranges
-    state.driver.battery = 100;
-    state.driver.range = 80;
+    // 1. Update Driver State
+    driver.wallet -= swap.price;
+    driver.battery = 100;
+    driver.range = 80;
+    saveDriverToDB();
 
-    // Update wallet dashboard DOM
-    document.getElementById("driver-wallet-val").textContent = `KES ${state.driver.wallet.toFixed(2)}`;
-    updateDriverBatteryDOM();
-
-    // Adjust Host state if swap happens at Mama Cynthia's
-    if (swap.kiosk.id === "kio_mama_cynthia") {
-        // 1. Swap host inventory: Change one "ready" battery slot to "low" (representing driver's old dead battery inserted), 
-        // and decrement another slot or simulate swapping.
-        const readySlot = state.host.rackSlots.find(s => s.status === "ready");
-        const emptyOrChargingSlot = state.host.rackSlots.find(s => s.status === "empty" || s.status === "low");
-
+    // 2. Update Kiosk Database State
+    const station = kiosks.find(k => k.id === swap.kioskId);
+    if (station) {
+        // Remove a 100% battery (disconnect from rack)
+        const readySlot = station.rackSlots.find(s => s.status === "ready");
         if (readySlot) {
-            // Take the full battery out: make it empty
             readySlot.status = "empty";
             readySlot.pct = 0;
         }
-        
-        // Insert rider's dead battery: put in the empty/charging slot at 14%
-        if (emptyOrChargingSlot) {
-            emptyOrChargingSlot.status = "charging";
-            emptyOrChargingSlot.pct = 14;
+
+        // Insert rider's dead battery (charging at 14% SOC)
+        const emptySlot = station.rackSlots.find(s => s.status === "empty");
+        if (emptySlot) {
+            emptySlot.status = "charging";
+            emptySlot.pct = 14;
         } else {
-            // fallback: create slot update
-            const slotToReplace = state.host.rackSlots[2]; // bay 3
-            slotToReplace.status = "charging";
-            slotToReplace.pct = 14;
+            // override a bay or create new
+            if (station.rackSlots.length > 0) {
+                station.rackSlots[0].status = "charging";
+                station.rackSlots[0].pct = 14;
+            }
         }
 
-        // 2. Add payout earnings to host
-        state.host.earningsToday += swap.price;
-        state.host.momoBalance += swap.price;
-
-        // Render host view components
-        renderRack();
-        document.getElementById("host-earnings-today").textContent = `KES ${state.host.earningsToday.toFixed(2)}`;
-        document.getElementById("host-momo-balance").textContent = `KES ${state.host.momoBalance.toFixed(2)}`;
+        // Add revenues
+        station.earningsToday += swap.price;
+        station.momoBalance += swap.price;
+        saveKiosksToDB();
     }
 
-    // Hide progress modal
-    document.getElementById("swap-progress-modal").classList.add("hidden");
-
-    // Serialize confirmation packet
-    const confirmParams = {
-        DRV: state.driver.id,
-        KIO: swap.kiosk.id,
-        STATUS: "COMPLETE",
-        BATT_OUT: "SLOT_04",
-        BATT_IN: "SLOT_02"
+    // 3. Register transaction ledger
+    const txId = "TXN_" + Math.random().toString(36).substr(2, 8).toUpperCase();
+    const newTx = {
+        id: txId,
+        type: "swap",
+        station: swap.kioskName,
+        amount: swap.price,
+        date: new Date().toISOString().replace('T', ' ').substring(0, 16)
     };
-    const confirmPacket = serializePacket("SWAP_CONFIRM", confirmParams);
-    logConsole(`[RX] Received swap completion confirmation: ${confirmPacket}`, "rx");
+    transactions.unshift(newTx);
+    saveTransactionsToDB();
+
+    // Re-render boards
+    updateDriverDashboardDOM();
+    renderRiderStations();
+    renderRiderLedger();
+    renderHostRack();
+    renderHostLedger();
+
+    // Telemetry confirmations
+    const confirmPkg = {
+        DRV: driver.id,
+        KIO: swap.kioskId,
+        STATUS: "SWAP_SUCCESS",
+        TX_REF: txId
+    };
+    const confirmPacket = serializePacket("CONFIRM_SWAP", confirmPkg);
+    logConsole(`[RX] Received confirmation: ${confirmPacket}`, "rx");
     updateTelemetrySize(confirmPacket);
 
-    // Show Success Modal
-    const successModal = document.getElementById("success-modal");
-    document.getElementById("success-kiosk-name").textContent = swap.kiosk.name;
-    document.getElementById("success-cost").textContent = `KES ${swap.price}.00`;
-    successModal.classList.remove("hidden");
-    
-    // Clear state
-    state.activeSwap = null;
+    // Open Success Modal
+    document.getElementById("success-station-lbl").textContent = swap.kioskName;
+    document.getElementById("receipt-cost-val").textContent = `KES ${swap.price}.00`;
+    document.getElementById("receipt-ref-code").textContent = txId;
+    document.getElementById("modal-swap-success").classList.remove("hidden");
+
+    showToast("Battery swap complete!");
+    activeSwapState = null;
 }
 
-// Update battery levels indicators in driver dashboard DOM
-function updateDriverBatteryDOM() {
-    const fillEl = document.getElementById("driver-battery-fill");
-    const pctEl = document.getElementById("driver-battery-pct");
-    const rangeEl = document.getElementById("driver-battery-range");
-    const warningEl = document.getElementById("battery-critical-warning");
+// ==================== 8. HOST PORTAL: RACK BAY ACTIONS ====================
+
+function manageHostSlot(slotId) {
+    const host = kiosks.find(k => k.id === "kio_mama_cynthia");
+    if (!host) return;
+
+    const slot = host.rackSlots.find(s => s.id === slotId);
+    if (!slot) return;
+
+    // Show custom action prompt for slot configuration
+    const act = confirm(`Bay 0${slotId} is currently [${slot.status.toUpperCase()} (${slot.pct}%)].\n\n- Click OK to cycle states:\n  (Ready -> Charging -> Empty -> Ready)`);
+    
+    if (act) {
+        if (slot.status === "ready") {
+            slot.status = "charging";
+            slot.pct = 20;
+        } else if (slot.status === "charging" || slot.status === "low") {
+            slot.status = "empty";
+            slot.pct = 0;
+        } else {
+            slot.status = "ready";
+            slot.pct = 100;
+        }
+        
+        saveKiosksToDB();
+        renderHostRack();
+        renderRiderStations();
+        
+        // Log telemetry
+        const telPkg = {
+            KIO: host.id,
+            BAY: slotId,
+            STATE: slot.status,
+            SOC: slot.pct
+        };
+        const packet = serializePacket("BAY_STATUS_CHANGE", telPkg);
+        logConsole(`[TX] Broadasting hardware update: ${packet}`, "system");
+    }
+}
+
+function handleAddNewBay() {
+    const host = kiosks.find(k => k.id === "kio_mama_cynthia");
+    if (!host) return;
+
+    if (host.rackSlots.length >= 8) {
+        alert("Maximum station charging rack capacity reached (8 bays max).");
+        return;
+    }
+
+    const nextId = host.rackSlots.length + 1;
+    host.rackSlots.push({ id: nextId, pct: 0, status: "empty" });
+    
+    saveKiosksToDB();
+    renderHostRack();
+    
+    showToast("Added Bay 0" + nextId + " to charging rack.");
+    logConsole(`[SYSTEM] Mama Cynthia's Solar Kiosk expanded rack capacity to ${nextId} slots.`, "system");
+}
+
+// ==================== 9. SUBMIT FORM ACTIONS ====================
+
+// RIDER: Mobile Money topup request
+document.getElementById("rider-topup-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const phone = document.getElementById("topup-phone").value;
+    const amount = parseInt(document.getElementById("topup-amount").value);
+
+    // Simulate SMS transaction authorization
+    const topupPkg = {
+        DRV: driver.id,
+        PHONE: phone,
+        VAL: amount
+    };
+    const packet = serializePacket("TOPUP_REQ", topupPkg);
+    logConsole(`[TX] Requesting wallet funding: ${packet}`, "tx");
+    updateTelemetrySize(packet);
+
+    setTimeout(() => {
+        // Add to wallet balance
+        driver.wallet += amount;
+        saveDriverToDB();
+
+        // Add to transaction log
+        const txId = "TXN_" + Math.random().toString(36).substr(2, 8).toUpperCase();
+        transactions.unshift({
+            id: txId,
+            type: "topup",
+            phone: phone,
+            amount: amount,
+            date: new Date().toISOString().replace('T', ' ').substring(0, 16)
+        });
+        saveTransactionsToDB();
+
+        // Re-render
+        updateDriverDashboardDOM();
+        renderRiderLedger();
+
+        // Telemetry response
+        const respPkg = {
+            STATUS: "SUCCESS",
+            ADD_VAL: amount,
+            NEW_BAL: driver.wallet,
+            REF: txId
+        };
+        const respPacket = serializePacket("TOPUP_CONFIRM", respPkg);
+        logConsole(`[RX] Received top-up authorization confirmation: ${respPacket}`, "rx");
+        updateTelemetrySize(respPacket);
+
+        showToast(`M-Pesa top-up of KES ${amount} successful!`);
+        document.getElementById("topup-amount").value = "";
+    }, 600);
+});
+
+// HOST: Request cash payouts
+document.getElementById("host-withdraw-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const phone = document.getElementById("withdraw-phone").value;
+    const host = kiosks.find(k => k.id === "kio_mama_cynthia");
+    
+    if (!host) return;
+    const amount = host.momoBalance;
+
+    if (amount <= 0) {
+        showToast("Payout balance is KES 0.00. No funds to withdraw.", "error");
+        return;
+    }
+
+    // Payout telemetry request
+    const payPkg = {
+        KIO: host.id,
+        PHONE: phone,
+        VAL: amount
+    };
+    const packet = serializePacket("PAYOUT_REQUEST", payPkg);
+    logConsole(`[TX] Broadcasting payout query: ${packet}`, "tx");
+    updateTelemetrySize(packet);
+
+    setTimeout(() => {
+        // Reset host balances
+        host.momoBalance = 0;
+        saveKiosksToDB();
+
+        // Add to transactions ledger
+        transactions.unshift({
+            id: "TXN_" + Math.random().toString(36).substr(2, 8).toUpperCase(),
+            type: "withdrawal",
+            phone: phone,
+            amount: amount,
+            date: new Date().toISOString().replace('T', ' ').substring(0, 16)
+        });
+        saveTransactionsToDB();
+
+        // Re-render host boards
+        document.getElementById("host-momo-payout-bal").textContent = "KES 0.00";
+        renderHostLedger();
+
+        const respPkg = {
+            STATUS: "PAID",
+            PHONE: phone,
+            AMT: amount
+        };
+        const respPacket = serializePacket("PAYOUT_CONFIRM", respPkg);
+        logConsole(`[RX] Payout successfully deposited to wallet: ${respPacket}`, "rx");
+        updateTelemetrySize(respPacket);
+
+        showToast(`Successfully paid KES ${amount.toFixed(2)} to ${phone}.`);
+        document.getElementById("withdraw-phone").value = "";
+    }, 700);
+});
+
+// HOST: Save Station profile settings
+document.getElementById("host-profile-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const name = document.getElementById("profile-kiosk-name").value;
+    const landmark = document.getElementById("profile-landmark").value;
+    const basePrice = parseInt(document.getElementById("profile-base-price").value);
+    const locationId = document.getElementById("profile-location-id").value;
+
+    const host = kiosks.find(k => k.id === "kio_mama_cynthia");
+    if (host) {
+        host.name = name;
+        host.landmark = landmark;
+        host.basePrice = basePrice;
+        host.locationId = locationId;
+        saveKiosksToDB();
+
+        // Update titles on DOM
+        document.getElementById("host-kiosk-title").textContent = name;
+        document.getElementById("host-kiosk-landmark").textContent = landmark;
+
+        renderHostRack();
+        renderRiderStations();
+
+        showToast("Station configuration updated successfully.");
+        
+        // Log update
+        const profilePkg = {
+            KIO: host.id,
+            NAME: name.replace(/ /g, "_"),
+            PRICE: basePrice,
+            LOC: locationId
+        };
+        const packet = serializePacket("UPDATE_STATION_PROFILE", profilePkg);
+        logConsole(`[TX] Broadcasting profile update: ${packet}`, "system");
+    }
+});
+
+// ==================== 10. SYSTEM CONTROLS & ROUTING ====================
+
+function updateDriverDashboardDOM() {
+    const fillEl = document.getElementById("rider-batt-fill");
+    const pctEl = document.getElementById("rider-batt-pct");
+    const rangeEl = document.getElementById("rider-batt-range");
+    const warningEl = document.getElementById("rider-batt-warning");
+    const walletEl = document.getElementById("rider-wallet-val");
+
+    if (walletEl) walletEl.textContent = `KES ${driver.wallet.toFixed(2)}`;
+    if (pctEl) pctEl.textContent = `${driver.battery}%`;
+    if (rangeEl) rangeEl.textContent = `Approx. ${driver.range} km remaining`;
 
     if (fillEl) {
-        fillEl.style.width = `${state.driver.battery}%`;
-        // Color shifts based on state of charge
-        if (state.driver.battery <= 20) {
+        fillEl.style.width = `${driver.battery}%`;
+        if (driver.battery <= 20) {
             fillEl.style.backgroundColor = "var(--danger)";
             if (warningEl) warningEl.style.display = "block";
-        } else if (state.driver.battery <= 50) {
+        } else if (driver.battery <= 50) {
             fillEl.style.backgroundColor = "var(--solar-yellow)";
             if (warningEl) warningEl.style.display = "none";
         } else {
@@ -536,173 +874,168 @@ function updateDriverBatteryDOM() {
             if (warningEl) warningEl.style.display = "none";
         }
     }
-
-    if (pctEl) pctEl.textContent = `${state.driver.battery}%`;
-    if (rangeEl) rangeEl.textContent = `Approx. ${state.driver.range} km left`;
 }
 
-// 8. INTERACTIVE SYSTEM CONTROLLERS
+// Router View switcher
+function navigateTo(viewId) {
+    document.getElementById("view-landing").classList.add("hidden");
+    document.getElementById("view-rider").classList.add("hidden");
+    document.getElementById("view-host").classList.add("hidden");
 
-// Handle Location Selector Shift
-document.getElementById("sim-location").addEventListener("change", (e) => {
-    state.selectedLocationId = e.target.value;
+    document.getElementById(viewId).classList.remove("hidden");
+
+    const badge = document.getElementById("current-role-badge");
+    const navBtn = document.getElementById("change-role-nav-btn");
+
+    if (viewId === "view-landing") {
+        badge.textContent = "P2P Network";
+        badge.className = "badge-role";
+        navBtn.classList.add("hidden");
+    } else if (viewId === "view-rider") {
+        badge.textContent = "Driver Portal";
+        badge.className = "badge-role rider";
+        navBtn.classList.remove("hidden");
+        
+        // Refresh Rider Portal views
+        renderRiderStations();
+        renderRiderLedger();
+        updateDriverDashboardDOM();
+    } else if (viewId === "view-host") {
+        badge.textContent = "Solar Host";
+        badge.className = "badge-role host";
+        navBtn.classList.remove("hidden");
+
+        // Refresh Host Portal views
+        renderHostRack();
+        renderHostLedger();
+    }
+}
+
+// Solar slide controls
+document.getElementById("host-solar-slider").addEventListener("input", (e) => {
+    solarIntensity = parseInt(e.target.value);
     
-    // Log location update packet
-    const locParams = {
-        DRV: state.driver.id,
-        LOC: state.selectedLocationId
-    };
-    const packet = serializePacket("LOC_UPDATE", locParams);
-    logConsole(`[TX] Simulating location broadcast: ${packet}`, "tx");
-    updateTelemetrySize(packet);
+    const sliderLabel = document.getElementById("host-solar-val-display");
+    const solarIndicatorHeader = document.getElementById("header-solar-intensity");
+    
+    let text = `${solarIntensity}% (Overcast Grid Mode)`;
+    if (solarIntensity > 75) text = `${solarIntensity}% (Peak Solar Surplus)`;
+    else if (solarIntensity > 40) text = `${solarIntensity}% (Moderate Sun)`;
 
-    // Re-render local kiosks list
-    renderKiosks();
+    sliderLabel.textContent = text;
+    solarIndicatorHeader.textContent = `Solar Index: ${solarIntensity}%`;
+
+    renderHostRack();
+    renderRiderStations();
+
+    // Log solar update packet
+    const solPkg = {
+        SOL: solarIntensity,
+        GRID_BACKUP: solarIntensity < 30 ? "YES" : "NO"
+    };
+    const packet = serializePacket("SOLAR_INDEX_UPDATE", solPkg);
+    logConsole(`[TX] Broadcasting grid telemetry update: ${packet}`, "system");
 });
 
-// Handle Solar Intensity Slider shift
-document.getElementById("solar-intensity").addEventListener("input", (e) => {
-    state.solarIntensity = parseInt(e.target.value);
-    document.getElementById("solar-intensity-val").textContent = `${state.solarIntensity}% (${state.solarIntensity > 50 ? "Peak Sun" : state.solarIntensity > 20 ? "Overcast" : "Grid Backup"})`;
-    
-    // Re-render views
-    renderRack();
-    renderKiosks();
+// Online toggle controls
+document.getElementById("host-toggle-online").addEventListener("change", (e) => {
+    const isOnline = e.target.checked;
+    const label = document.getElementById("host-toggle-status-text");
 
-    // Serialize power update packet
-    const gridParams = {
-        KIO: state.host.id,
-        SOL_PCT: state.solarIntensity,
-        GRID_FALLBACK: state.solarIntensity < 30 ? "YES" : "NO"
-    };
-    const packet = serializePacket("SOLAR_STATUS", gridParams);
-    logConsole(`[TX] Station Telemetry update: ${packet}`, "system");
-});
+    const host = kiosks.find(k => k.id === "kio_mama_cynthia");
+    if (host) {
+        host.online = isOnline;
+        saveKiosksToDB();
+    }
 
-// Handle host online switch
-document.getElementById("host-online-toggle").addEventListener("change", (e) => {
-    state.host.online = e.target.checked;
-    
-    const label = document.getElementById("host-online-status");
-    if (e.target.checked) {
+    if (isOnline) {
         label.textContent = "Online";
-        label.className = "host-online-label text-green";
-        logConsole(`[HOST] Mama Cynthia's Solar Kiosk is now ONLINE`, "system");
+        label.className = "toggle-status-lbl text-green";
+        showToast("Station is now online & searchable.");
+        logConsole("[HOST] Mama Cynthia's Solar Kiosk status set to ONLINE.", "system");
     } else {
         label.textContent = "Offline";
-        label.className = "host-online-label text-muted";
-        logConsole(`[HOST] Mama Cynthia's Solar Kiosk is now OFFLINE`, "system");
+        label.className = "toggle-status-lbl text-muted";
+        showToast("Station is now offline.");
+        logConsole("[HOST] Mama Cynthia's Solar Kiosk status set to OFFLINE.", "system");
     }
 
-    // Refresh views to match online availability lists
-    renderKiosks();
+    renderRiderStations();
 });
 
-// Role Navigation
-document.getElementById("role-driver-btn").addEventListener("click", () => {
-    document.getElementById("role-driver-btn").classList.add("active");
-    document.getElementById("role-host-btn").classList.remove("active");
+// Trigger directory searches
+document.getElementById("station-search-input").addEventListener("input", renderRiderStations);
+document.getElementById("station-filter-location").addEventListener("change", (e) => {
+    driver.currentLocation = e.target.value === "all" ? "nairobi_west" : e.target.value;
+    saveDriverToDB();
+
+    renderRiderStations();
+});
+
+// Navigation bindings
+document.getElementById("select-rider-card").addEventListener("click", () => navigateTo("view-rider"));
+document.getElementById("select-host-card").addEventListener("click", () => navigateTo("view-host"));
+document.getElementById("change-role-nav-btn").addEventListener("click", () => navigateTo("view-landing"));
+document.getElementById("header-logo-btn").addEventListener("click", () => navigateTo("view-landing"));
+
+// Console logging accordion toggle
+document.getElementById("toggle-console-btn").addEventListener("click", (e) => {
+    // Avoid toggling when clicking the clear button
+    if (e.target.id === "btn-clear-footer-console") return;
+
+    const tray = document.querySelector(".telemetry-bar-console");
+    tray.classList.toggle("open");
+});
+
+document.getElementById("btn-clear-footer-console").addEventListener("click", () => {
+    document.getElementById("footer-console-log").innerHTML = "";
+    logConsole("Console outputs cleared.", "system");
+});
+
+// Modal bindings
+document.getElementById("btn-cancel-momo").addEventListener("click", () => {
+    document.getElementById("modal-momo-pay").classList.add("hidden");
+    logConsole("[SYSTEM] Payment authorization cancelled by rider.", "error");
+    activeSwapState = null;
+});
+
+document.getElementById("btn-confirm-momo").addEventListener("click", processMomoAuthorization);
+document.getElementById("btn-sim-host-approve").addEventListener("click", () => {
+    const step3 = document.getElementById("chk-step-3");
+    const phaseLabel = document.getElementById("progress-phase-msg");
+
+    step3.className = "checkpoint-item active";
+    phaseLabel.textContent = "Swap complete! Drive safely.";
+    setTimeout(finalizePhysicalSwap, 1000);
+});
+
+document.getElementById("btn-close-success-modal").addEventListener("click", () => {
+    document.getElementById("modal-swap-success").classList.add("hidden");
+});
+
+document.getElementById("host-add-bay-btn").addEventListener("click", handleAddNewBay);
+
+// Initialize application
+function boot() {
+    initDatabase();
     
-    document.getElementById("driver-app-view").classList.remove("hidden");
-    document.getElementById("host-app-view").classList.add("hidden");
-    state.currentRole = "driver";
-});
-
-document.getElementById("role-host-btn").addEventListener("click", () => {
-    document.getElementById("role-host-btn").classList.add("active");
-    document.getElementById("role-driver-btn").classList.remove("active");
-    
-    document.getElementById("host-app-view").classList.remove("hidden");
-    document.getElementById("driver-app-view").classList.add("hidden");
-    state.currentRole = "host";
-});
-
-// Cancel MoMo PIN prompt
-document.getElementById("momo-cancel-btn").addEventListener("click", () => {
-    hideMomoModal();
-    logConsole("[SYSTEM] Mobile Money Payment cancelled by rider.", "error");
-});
-
-// Authorize payment
-document.getElementById("momo-confirm-btn").addEventListener("click", handleMomoSubmit);
-
-// Host simulated approval button
-document.getElementById("sim-host-approve-btn").addEventListener("click", executePhysicalSwap);
-
-// Close success screen
-document.getElementById("success-close-btn").addEventListener("click", () => {
-    document.getElementById("success-modal").classList.add("hidden");
-});
-
-// Clear console logger
-document.getElementById("clear-console-btn").addEventListener("click", () => {
-    document.getElementById("console-output").innerHTML = "";
-    logConsole("Console output cleared.", "system");
-});
-
-// Dynamic UI accordion toggle
-document.querySelectorAll(".accordion-title").forEach(title => {
-    title.addEventListener("click", () => {
-        const item = title.parentElement;
-        const active = item.classList.contains("active");
-        
-        // Close other items
-        document.querySelectorAll(".accordion-item").forEach(el => el.classList.remove("active"));
-        
-        if (!active) {
-            item.classList.add("active");
-        }
-    });
-});
-
-// Force Sync database simulator button
-document.getElementById("force-sync-db-btn").addEventListener("click", () => {
-    logConsole("[OFFLINE] Initiating database handshake with Kika-Charge central registries...", "system");
-    
-    const syncParams = {
-        DRV: state.driver.id,
-        VER: "1.08",
-        DB_CSUM: "8E3D77A2"
-    };
-    const packet = serializePacket("SYNC_DB_REQ", syncParams);
-    logConsole(`[TX] Broadcasting db sync: ${packet}`, "tx");
-    updateTelemetrySize(packet);
-
-    setTimeout(() => {
-        const rsvParams = {
-            STATUS: "OK",
-            NEW_STATIONS: 0,
-            LOCAL_DB: "VER_1.08_UPTODATE"
-        };
-        const respPacket = serializePacket("SYNC_DB_RESP", rsvParams);
-        logConsole(`[RX] Handshake complete: ${respPacket}`, "rx");
-        updateTelemetrySize(respPacket);
-        
-        logConsole("[OFFLINE] Offline database verification complete. 45 stations verified.", "system");
-    }, 500);
-});
-
-// Initial boot settings
-function init() {
-    updateDriverBatteryDOM();
-    renderKiosks();
-    renderRack();
-    
-    // Set default accordion to open (first item)
-    document.querySelector(".accordion-item").classList.add("active");
-    
-    logConsole("Kika-Charge simulation successfully booted.", "system");
-
-    // Register Service Worker for PWA/offline access simulation
+    // Register Service Worker
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js')
-            .then(reg => {
-                logConsole("[OFFLINE] Service Worker registered successfully.", "system");
-            })
-            .catch(err => {
-                console.error("Service worker registration failed:", err);
-            });
+            .then(reg => console.log('Service Worker registered.'))
+            .catch(err => console.log('Service Worker registration failed.', err));
     }
+
+    // Set count statistics
+    document.getElementById("total-registered-kiosks").textContent = kiosks.length;
+
+    // Load initial views
+    navigateTo("view-landing");
+    
+    // Start background simulation loops
+    startBackgroundChargingTicker();
+    
+    logConsole("Kika-Charge fully functional application initialized.", "system");
 }
 
-window.onload = init;
+window.onload = boot;
