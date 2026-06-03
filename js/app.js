@@ -1039,3 +1039,121 @@ function boot() {
 }
 
 window.onload = boot;
+// ==================== REGISTRATION ENGINE CONTROLLERS ====================
+
+document.addEventListener('DOMContentLoaded', () => {
+    const viewLanding = document.getElementById('view-landing');
+    const viewRider = document.getElementById('view-rider');
+    const viewHost = document.getElementById('view-host');
+    const roleBadge = document.getElementById('current-role-badge');
+    const logoutBtn = document.getElementById('change-role-nav-btn');
+
+    // DOM Logger utility matching your existing telemetry log pipeline
+    function logToConsole(message, type = 'system-log') {
+        const consoleLog = document.getElementById('footer-console-log');
+        if (consoleLog) {
+            const entry = document.createElement('div');
+            entry.className = `c-log ${type}`;
+            entry.textContent = `[${type.toUpperCase()}] ${message}`;
+            consoleLog.appendChild(entry);
+            consoleLog.scrollTop = consoleLog.scrollHeight;
+        }
+    }
+
+    // Driver Sign-Up Handler
+    const driverForm = document.getElementById('driver-registration-form');
+    if (driverForm) {
+        driverForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const payload = {
+                name: document.getElementById('reg-driver-name').value,
+                phone: document.getElementById('reg-driver-phone').value,
+                vehicle: document.getElementById('reg-driver-vehicle').value
+            };
+
+            try {
+                const response = await fetch('/api/register-driver', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    logToConsole(`Driver registered successfully. ID: ${result.driver.id}`, 'system-log');
+
+                    // Dynamically map values into existing DOM framework elements
+                    document.getElementById('rider-profile-name').textContent = `${result.driver.name} (${payload.phone})`;
+                    document.getElementById('rider-wallet-val').textContent = `KES 0.00`;
+                    
+                    // View State Transformation matching your layout constraints
+                    viewLanding.classList.add('hidden');
+                    viewRider.classList.remove('hidden');
+                    roleBadge.textContent = 'Driver Portal';
+                    roleBadge.className = 'badge-role';
+                    if (logoutBtn) logoutBtn.classList.remove('hidden');
+                }
+            } catch (error) {
+                logToConsole(`Driver registration communication error.`, 'offline');
+            }
+        });
+    }
+
+    // Kiosk Host Sign-Up Handler
+    const hostForm = document.getElementById('host-registration-form');
+    if (hostForm) {
+        hostForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const payload = {
+                name: document.getElementById('reg-host-name').value,
+                landmark: document.getElementById('reg-host-landmark').value,
+                location: document.getElementById('reg-host-location').value
+            };
+
+            try {
+                const response = await fetch('/api/register-host', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    logToConsole(`Solar Host registered. Station: ${result.host.name}`, 'system-log');
+
+                    // Dynamically map values into existing DOM framework elements
+                    document.getElementById('host-kiosk-title').textContent = result.host.name;
+                    document.getElementById('host-kiosk-landmark').textContent = `📍 ${result.host.landmark}`;
+                    document.getElementById('profile-kiosk-name').value = result.host.name;
+                    document.getElementById('profile-landmark').value = result.host.landmark;
+                    document.getElementById('profile-location-id').value = result.host.location;
+                    document.getElementById('host-earn-today').textContent = `KES 0.00`;
+                    document.getElementById('host-momo-payout-bal').textContent = `KES 0.00`;
+
+                    // View State Transformation matching your layout constraints
+                    viewLanding.classList.add('hidden');
+                    viewHost.classList.remove('hidden');
+                    roleBadge.textContent = 'Solar Host';
+                    roleBadge.className = 'badge-role host-bg';
+                    if (logoutBtn) logoutBtn.classList.remove('hidden');
+                }
+            } catch (error) {
+                logToConsole(`Host registration communication error.`, 'offline');
+            }
+        });
+    }
+
+    // Wire standard Switch Portal logout navigation button
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+            viewRider.classList.add('hidden');
+            viewHost.classList.add('hidden');
+            viewLanding.classList.remove('hidden');
+            logoutBtn.classList.add('hidden');
+            roleBadge.textContent = 'P2P Network';
+            roleBadge.className = 'badge-role';
+        });
+    }
+});

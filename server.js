@@ -16,8 +16,68 @@ const MIME_TYPES = {
     '.ico': 'image/x-icon'
 };
 
+// Simple data storage arrays
+const registeredDrivers = [];
+const registeredHosts = [];
+
 const server = http.createServer((req, res) => {
     console.log(`[Request] ${req.method} ${req.url}`);
+
+    // API ENDPOINT: REGISTER DRIVER
+    if (req.method === 'POST' && req.url === '/api/register-driver') {
+        let body = '';
+        req.on('data', chunk => { body += chunk.toString(); });
+        req.on('end', () => {
+            try {
+                const data = JSON.parse(body);
+                const newDriver = {
+                    id: `rider_${Date.now().toString().slice(-4)}`,
+                    name: data.name,
+                    phone: data.phone,
+                    vehicle: data.vehicle,
+                    walletBalance: 0.00,
+                    batteryPct: 100
+                };
+                registeredDrivers.push(newDriver);
+                console.log('[Database] Driver Added:', newDriver);
+                
+                res.writeHead(201, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: true, driver: newDriver }));
+            } catch (err) {
+                res.writeHead(400, { 'Content-Type': 'text/plain' });
+                res.end('Invalid JSON Request Payload');
+            }
+        });
+        return;
+    }
+
+    // API ENDPOINT: REGISTER HOST
+    if (req.method === 'POST' && req.url === '/api/register-host') {
+        let body = '';
+        req.on('data', chunk => { body += chunk.toString(); });
+        req.on('end', () => {
+            try {
+                const data = JSON.parse(body);
+                const newHost = {
+                    id: `host_${Date.now().toString().slice(-4)}`,
+                    name: data.name,
+                    landmark: data.landmark,
+                    location: data.location,
+                    earnings: 0.00,
+                    payoutBalance: 0.00
+                };
+                registeredHosts.push(newHost);
+                console.log('[Database] Host Added:', newHost);
+                
+                res.writeHead(201, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: true, host: newHost }));
+            } catch (err) {
+                res.writeHead(400, { 'Content-Type': 'text/plain' });
+                res.end('Invalid JSON Request Payload');
+            }
+        });
+        return;
+    }
 
     // Parse URL path
     let filePath = req.url === '/' ? './index.html' : '.' + req.url;
@@ -26,7 +86,7 @@ const server = http.createServer((req, res) => {
     const resolvedPath = path.resolve(filePath);
     const workspaceRoot = path.resolve(__dirname);
     
-    // Prevent directory traversal attacks (ensure files are served from workspace directory)
+    // Prevent directory traversal attacks
     if (!resolvedPath.startsWith(workspaceRoot)) {
         res.writeHead(403, { 'Content-Type': 'text/plain' });
         res.end('403 Forbidden: Directory Traversal Blocked');
@@ -48,7 +108,6 @@ const server = http.createServer((req, res) => {
         } else {
             res.writeHead(200, { 
                 'Content-Type': contentType,
-                // Add header to support service worker testing locally
                 'Service-Worker-Allowed': '/' 
             });
             res.end(content, 'utf-8');
