@@ -1,0 +1,21 @@
+{
+  "name": "kika-charge",
+  "version": "1.0.0",
+  "description": "Smart P2P Solar EV Charging & Swap Network Simulator",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "p2p",
+    "solar",
+    "ev",
+    "charging",
+    "telemetry",
+    "sustainability",
+    "sdg"
+  ],
+  "author": "Antigravity Agent",
+  "license": "MIT"
+}

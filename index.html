@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kika-Charge — P2P EV charging & Swap Network</title>
+    <!-- Google Fonts for premium typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- HEADER: Global title and SDG Badges -->
+        <header class="global-header">
+            <div class="header-logo">
+                <span class="logo-bolt">⚡</span>
+                <h1>KIKA-CHARGE</h1>
+                <span class="logo-sub">P2P EV Swap Grid</span>
+            </div>
+            <div class="sdg-badges">
+                <div class="sdg-badge goal-7" title="SDG 7: Affordable and Clean Energy">
+                    <span class="sdg-num">7</span>
+                    <span class="sdg-text">Clean Energy</span>
+                </div>
+                <div class="sdg-badge goal-11" title="SDG 11: Sustainable Cities & Communities">
+                    <span class="sdg-num">11</span>
+                    <span class="sdg-text">Smart Cities</span>
+                </div>
+                <div class="sdg-badge goal-13" title="SDG 13: Climate Action">
+                    <span class="sdg-num">13</span>
+                    <span class="sdg-text">Climate</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="dashboard-grid">
+            <!-- LEFT COLUMN: Simulator Settings & Network Telemetry Visualizer -->
+            <section class="telemetry-panel">
+                <div class="panel-header">
+                    <h2>📟 Telemetry & Network Logger</h2>
+                    <span class="badge-status">SMS / UDP Mode</span>
+                </div>
+                <p class="panel-desc">
+                    Rather than loading heavy live map interfaces (which consume ~2-5 MB of data per session), Kika-Charge operates completely map-free, caching static kiosk directories offline and utilizing ultra-compact, text-delimited SMS/cellular pings of under <strong>2 KB</strong> for active availability updates.
+                </p>
+
+                <!-- Data Counter -->
+                <div class="data-counter-box">
+                    <div class="counter-label">Estimated Request Payload Size</div>
+                    <div class="counter-value" id="telemetry-size">0.00 KB</div>
+                    <div class="counter-bar-wrapper">
+                        <div class="counter-bar" id="telemetry-bar" style="width: 0%"></div>
+                    </div>
+                    <div class="counter-footer">
+                        <span>Max Budget: 2.0 KB</span>
+                        <span id="data-saved-pct">Saved: 99.8%</span>
+                    </div>
+                </div>
+
+                <!-- Simulation Settings -->
+                <div class="simulation-controls">
+                    <h3>🛠️ Simulation Controller</h3>
+                    <div class="form-group">
+                        <label for="sim-location">Simulated Driver Location (Nairobi Hubs)</label>
+                        <select id="sim-location">
+                            <option value="nairobi_west">Nairobi West (Commercial Area)</option>
+                            <option value="cbd">Nairobi CBD (High Congestion)</option>
+                            <option value="kilimani">Kilimani (Residential Solar Arrays)</option>
+                            <option value="karen">Karen (High Solar Density)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Solar Intensity (Simulates Daytime Surplus)</label>
+                        <div class="solar-slider-wrapper">
+                            <input type="range" id="solar-intensity" min="0" max="100" value="85">
+                            <span id="solar-intensity-val">85% (Peak Sun)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Logger Console -->
+                <div class="console-box">
+                    <div class="console-header">
+                        <span>Raw Text-Packets Broadcast Log</span>
+                        <button id="clear-console-btn">Clear</button>
+                    </div>
+                    <div class="console-output" id="console-output">
+                        <div class="log-entry system-log">[SYSTEM] Kika-Charge telemetry listener initialized. Offline database loaded.</div>
+                        <div class="log-entry system-log">[OFFLINE] Cached 45 local swap station landmarks.</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CENTER COLUMN: Interactive Smartphone Mockup -->
+            <section class="phone-simulator">
+                <div class="phone-frame">
+                    <div class="phone-speaker"></div>
+                    <div class="phone-screen">
+                        
+                        <!-- Role Toggle Switch at the top of the app interface -->
+                        <div class="app-role-toggle">
+                            <button id="role-driver-btn" class="active">
+                                <span class="role-icon">🏍️</span> Driver App
+                            </button>
+                            <button id="role-host-btn">
+                                <span class="role-icon">🏠</span> Solar Kiosk Host
+                            </button>
+                        </div>
+
+                        <!-- ================= DRIVER INTERFACE ================= -->
+                        <div id="driver-app-view" class="app-view">
+                            <!-- Driver Status Card -->
+                            <div class="driver-status-card">
+                                <div class="card-row">
+                                    <div class="driver-meta">
+                                        <span class="driver-tag">BODA RIDER</span>
+                                        <h3 id="driver-name">Rider #204 - Kamau</h3>
+                                    </div>
+                                    <div class="driver-wallet">
+                                        <span class="wallet-label">M-Pesa Wallet</span>
+                                        <span class="wallet-val" id="driver-wallet-val">KES 420.00</span>
+                                    </div>
+                                </div>
+
+                                <div class="battery-section">
+                                    <div class="battery-visual-container">
+                                        <div class="battery-body">
+                                            <div class="battery-level-fill" id="driver-battery-fill" style="width: 14%;"></div>
+                                            <div class="battery-lightning">⚡</div>
+                                        </div>
+                                        <div class="battery-cap"></div>
+                                    </div>
+                                    <div class="battery-stats">
+                                        <div class="battery-pct-val" id="driver-battery-pct">14%</div>
+                                        <div class="battery-range-val" id="driver-battery-range">Approx. 9 km left</div>
+                                    </div>
+                                </div>
+
+                                <div class="battery-warning-banner" id="battery-critical-warning">
+                                    ⚠️ Low Battery! Find nearest Swap Kiosk immediately.
+                                </div>
+                            </div>
+
+                            <!-- Visual map-free Station Finder -->
+                            <div class="section-title-wrapper">
+                                <h3>📍 Nearest Solar Swap Kiosks</h3>
+                                <span class="offline-tag" title="Offline location lookups are computed based on pre-downloaded database index">Offline Cache Active</span>
+                            </div>
+
+                            <!-- Kiosk list (dynamically generated in app.js) -->
+                            <div class="kiosk-list" id="kiosk-list">
+                                <!-- Dynamic kiosk list loaded here -->
+                            </div>
+                        </div>
+
+                        <!-- ================= HOST INTERFACE ================= -->
+                        <div id="host-app-view" class="app-view hidden">
+                            <!-- Host Header Overview -->
+                            <div class="host-header-card">
+                                <div class="host-profile-row">
+                                    <div>
+                                        <span class="host-tag">KIOSK OPERATOR</span>
+                                        <h3 id="host-kiosk-name">Mama Cynthia's Solar Kiosk</h3>
+                                        <p class="host-landmark">📍 Nairobi West, next to Airtel pole</p>
+                                    </div>
+                                    <div class="host-status-toggle">
+                                        <label class="switch">
+                                            <input type="checkbox" id="host-online-toggle" checked>
+                                            <span class="slider round"></span>
+                                        </label>
+                                        <span class="host-online-label" id="host-online-status">Online</span>
+                                    </div>
+                                </div>
+
+                                <!-- Solar & Grid Status Summary -->
+                                <div class="host-energy-summary">
+                                    <div class="energy-metric">
+                                        <span class="metric-icon">☀️</span>
+                                        <div class="metric-details">
+                                            <span class="metric-title">Solar Gen</span>
+                                            <span class="metric-val" id="host-solar-kw">4.2 kW</span>
+                                        </div>
+                                    </div>
+                                    <div class="energy-metric">
+                                        <span class="metric-icon">💰</span>
+                                        <div class="metric-details">
+                                            <span class="metric-title">Swap Cost</span>
+                                            <span class="metric-val text-green" id="host-current-price">KES 120</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Battery Slots Rack -->
+                            <div class="section-title-wrapper">
+                                <h3>🔋 Battery Swap Rack Slots</h3>
+                                <span class="p2p-badge">Capacity: 6 Slots</span>
+                            </div>
+
+                            <div class="battery-rack-grid" id="battery-rack-grid">
+                                <!-- Dynamic slots generated in app.js -->
+                            </div>
+
+                            <!-- Host Analytics & Mobile Money Earnings -->
+                            <div class="host-earnings-card">
+                                <h4>💰 Solar Swap Payout Balance</h4>
+                                <div class="earnings-row">
+                                    <div class="earnings-col">
+                                        <span class="earnings-lbl">Today's Income</span>
+                                        <span class="earnings-val text-green" id="host-earnings-today">KES 1,320.00</span>
+                                    </div>
+                                    <div class="earnings-col border-left">
+                                        <span class="earnings-lbl">Uncollected MoMo</span>
+                                        <span class="earnings-val" id="host-momo-balance">KES 3,840.00</span>
+                                    </div>
+                                </div>
+                                <button class="btn btn-primary btn-block" id="host-payout-btn">💳 Payout to Mobile Money</button>
+                            </div>
+                        </div>
+
+                        <!-- SIMULATED MOBILE MONEY (MoMo) / USSD POPUP INTERFACE -->
+                        <div class="momo-modal-overlay hidden" id="momo-modal">
+                            <div class="momo-modal-box">
+                                <div class="momo-provider-logo">
+                                    <span class="momo-logo-txt">m-pesa</span>
+                                </div>
+                                <div class="momo-title">Mobile Money Push Payment</div>
+                                <div class="momo-details">
+                                    <p>Pay <strong>Kika-Charge Solar Network</strong></p>
+                                    <p class="momo-amount" id="momo-charge-amount">KES 150.00</p>
+                                    <p class="momo-desc" id="momo-charge-description">Battery Swap #4928 at Mama Cynthia's Solar Kiosk</p>
+                                </div>
+                                <div class="momo-pin-input-wrapper">
+                                    <label for="momo-pin">Enter 4-Digit M-Pesa PIN:</label>
+                                    <input type="password" id="momo-pin" maxlength="4" placeholder="••••" autocomplete="off">
+                                </div>
+                                <div class="momo-actions">
+                                    <button class="btn btn-cancel" id="momo-cancel-btn">Cancel</button>
+                                    <button class="btn btn-confirm" id="momo-confirm-btn">Pay Now</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SIMULATED SWAP STATUS SCREEN (Progress tracker) -->
+                        <div class="swap-progress-overlay hidden" id="swap-progress-modal">
+                            <div class="swap-progress-box">
+                                <div class="swap-progress-header">
+                                    <span class="swap-badge">SWAP IN PROGRESS</span>
+                                    <h3 id="swap-progress-kiosk">Mama Cynthia's Kiosk</h3>
+                                </div>
+                                <div class="swap-animation-box">
+                                    <div class="swap-circle">
+                                        <div class="battery-icon-animate text-orange">⚡</div>
+                                        <div class="arrow-spin"></div>
+                                    </div>
+                                    <div class="swap-phase-text" id="swap-phase-lbl">Awaiting Kiosk Approval...</div>
+                                </div>
+                                <div class="swap-step-list">
+                                    <div class="swap-step active" id="step-payment">✓ Mobile Money Payment Authorized</div>
+                                    <div class="swap-step" id="step-approval">⏳ Host Confirming Battery Unlock</div>
+                                    <div class="swap-step" id="step-swap">⏳ Pull Old Battery & Insert New Solar Cell</div>
+                                </div>
+                                <div class="swap-action-wrapper hidden" id="swap-host-sim-actions">
+                                    <p class="sim-label">🤖 SIMULATION SHORTCUT FOR HOST:</p>
+                                    <button class="btn btn-accent btn-sm" id="sim-host-approve-btn">Approve Battery Swap Unlock</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SUCCESS SCREEN -->
+                        <div class="success-overlay hidden" id="success-modal">
+                            <div class="success-box">
+                                <div class="success-icon">✓</div>
+                                <h2>Swap Successful!</h2>
+                                <p id="success-kiosk-name">Mama Cynthia's Solar Kiosk</p>
+                                <hr class="success-divider">
+                                <div class="success-details">
+                                    <div class="success-detail-row">
+                                        <span>Battery Charged:</span>
+                                        <span class="text-green font-bold">100%</span>
+                                    </div>
+                                    <div class="success-detail-row">
+                                        <span>Range Added:</span>
+                                        <span class="font-bold">80 km</span>
+                                    </div>
+                                    <div class="success-detail-row">
+                                        <span>Cost:</span>
+                                        <span class="font-bold" id="success-cost">KES 120.00</span>
+                                    </div>
+                                </div>
+                                <button class="btn btn-primary btn-block" id="success-close-btn">Return to Dashboard</button>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="phone-home-button"></div>
+                </div>
+            </section>
+
+            <!-- RIGHT COLUMN: Concept Presentation, Tech Specs, SDG Goals info -->
+            <section class="info-panel">
+                <div class="panel-header">
+                    <h2>ℹ️ P2P Charging Architecture</h2>
+                </div>
+                <div class="accordion-item">
+                    <h3 class="accordion-title">🔌 Decentralized Solar Sharing</h3>
+                    <div class="accordion-content">
+                        <p>
+                            Instead of building multi-million dollar charging depots on weak urban grid systems, Kika-Charge harnesses the massive scale of private solar installations. Kiosk owners, market vendors, and homes with rooftop solar generate dynamic surplus electricity during daylight peak hours. By selling this excess directly to boda-boda operators, they earn solar passive income and relieve the urban grid.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="accordion-item">
+                    <h3 class="accordion-title">📡 How SMS / Map-Free Routing Works</h3>
+                    <div class="accordion-content">
+                        <p>
+                            Maps consume excessive mobile data and battery life, and they fail in rural areas with poor 3G/4G networks. Kika-Charge works by:
+                        </p>
+                        <ol>
+                            <li><strong>Local SQLite Cache:</strong> Core database of kiosk names, directions, and geographic zones is stored locally on the phone.</li>
+                            <li><strong>Delimiter-based Pings:</strong> Real-time requests (checking battery inventory and prices) are serialized into tiny packets.</li>
+                            <li><strong>Multi-Channel Broadcast:</strong> Packets can be sent over standard cellular internet (via custom UDP/TCP headers) or converted to a simple SMS string when internet drops completely.</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h3 class="accordion-title">☀️ Sun-Based Dynamic Pricing</h3>
+                    <div class="accordion-content">
+                        <p>
+                            To prevent grid spikes and optimize clean energy consumption, charging fees dynamically scale with solar generation:
+                        </p>
+                        <ul>
+                            <li><strong>Midday Peak (11 AM - 3 PM):</strong> Solar energy is abundant. Prices are reduced by up to 30% to incentivize battery swapping during peak sun.</li>
+                            <li><strong>Overcast / Night:</strong> Grid-fallback mode. Prices return to baseline rates to preserve grid stability.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Offline Cache Widget -->
+                <div class="offline-db-box">
+                    <div class="db-status-row">
+                        <span class="db-dot"></span>
+                        <h4>Offline Database Status</h4>
+                    </div>
+                    <div class="db-stat-item">
+                        <span>Database Size:</span>
+                        <strong>184 KB</strong>
+                    </div>
+                    <div class="db-stat-item">
+                        <span>Registered Kiosks:</span>
+                        <strong>45 Stations (Nairobi Hub)</strong>
+                    </div>
+                    <div class="db-stat-item">
+                        <span>Last Synced:</span>
+                        <strong>Today (Offline Ready)</strong>
+                    </div>
+                    <button class="btn btn-sm btn-outline-primary btn-block" id="force-sync-db-btn" style="margin-top: 10px;">⚡ Force Resync Offline Database</button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Core App Logic -->
+    <script src="app.js"></script>
+</body>
+</html>
