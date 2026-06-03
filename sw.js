@@ -1,5 +1,5 @@
 // Kika-Charge Service Worker for Offline Capabilities
-const CACHE_NAME = 'kika-charge-v1';
+const CACHE_NAME = 'kika-charge-v2';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
