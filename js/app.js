@@ -1048,55 +1048,58 @@ document.addEventListener('DOMContentLoaded', () => {
     const roleBadge = document.getElementById('current-role-badge');
     const logoutBtn = document.getElementById('change-role-nav-btn');
 
-    // DOM Logger utility matching your existing telemetry log pipeline
-    function logToConsole(message, type = 'system-log') {
-        const consoleLog = document.getElementById('footer-console-log');
-        if (consoleLog) {
-            const entry = document.createElement('div');
-            entry.className = `c-log ${type}`;
-            entry.textContent = `[${type.toUpperCase()}] ${message}`;
-            consoleLog.appendChild(entry);
-            consoleLog.scrollTop = consoleLog.scrollHeight;
-        }
-    }
-
     // Driver Sign-Up Handler
     const driverForm = document.getElementById('driver-registration-form');
     if (driverForm) {
         driverForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const payload = {
-                name: document.getElementById('reg-driver-name').value,
-                phone: document.getElementById('reg-driver-phone').value,
-                vehicle: document.getElementById('reg-driver-vehicle').value
+            const nameInput = document.getElementById('reg-driver-name').value;
+            const phoneInput = document.getElementById('reg-driver-phone').value;
+            const vehicleInput = document.getElementById('reg-driver-vehicle').value;
+
+            // 1. Instantly construct and register the custom profile object
+            const customDriver = {
+                id: `drv_${Date.now().toString().slice(-3)}`,
+                name: `${nameInput} (${phoneInput})`,
+                wallet: 0.00,
+                battery: 100,
+                range: 80, 
+                currentLocation: "nairobi_west"
             };
 
+            // 2. Commit it to localStorage over the default template
+            localStorage.setItem("kika_driver", JSON.stringify(customDriver));
+            driver = customDriver; // Update the runtime memory object reference
+
+            // 3. Serialize local log telemetry metrics
+            const pPkg = { ACT: "DRIVER_REG", ID: driver.id, PHONE: phoneInput };
+            const pkt = serializePacket("REGISTER_USER", pPkg);
+            logConsole(`Locally stored custom Driver: ${pkt}`, "system");
+            updateTelemetrySize(pkt);
+
+            // 4. Fallback API tracking fetch ping
             try {
-                const response = await fetch('/api/register-driver', {
+                await fetch('/api/register-driver', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify({ name: nameInput, phone: phoneInput, vehicle: vehicleInput })
                 });
-
-                if (response.ok) {
-                    const result = await response.json();
-                    logToConsole(`Driver registered successfully. ID: ${result.driver.id}`, 'system-log');
-
-                    // Dynamically map values into existing DOM framework elements
-                    document.getElementById('rider-profile-name').textContent = `${result.driver.name} (${payload.phone})`;
-                    document.getElementById('rider-wallet-val').textContent = `KES 0.00`;
-                    
-                    // View State Transformation matching your layout constraints
-                    viewLanding.classList.add('hidden');
-                    viewRider.classList.remove('hidden');
-                    roleBadge.textContent = 'Driver Portal';
-                    roleBadge.className = 'badge-role';
-                    if (logoutBtn) logoutBtn.classList.remove('hidden');
-                }
-            } catch (error) {
-                logToConsole(`Driver registration communication error.`, 'offline');
+            } catch (err) {
+                // Fails silently if serverless endpoints are offline; local execution remains seamless
             }
+
+            // 5. Transform Document View states smoothly using your design specs
+            viewLanding.classList.add('hidden');
+            viewRider.classList.remove('hidden');
+            roleBadge.textContent = 'Driver Portal';
+            roleBadge.className = 'badge-role rider';
+            if (logoutBtn) logoutBtn.classList.remove('hidden');
+
+            // 6. Force immediate dashboard and station ledger DOM re-render updates
+            updateDriverDashboardDOM();
+            renderRiderStations();
+            renderRiderLedger();
         });
     }
 
@@ -1106,46 +1109,78 @@ document.addEventListener('DOMContentLoaded', () => {
         hostForm.addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            const payload = {
-                name: document.getElementById('reg-host-name').value,
-                landmark: document.getElementById('reg-host-landmark').value,
-                location: document.getElementById('reg-host-location').value
+            const nameInput = document.getElementById('reg-host-name').value;
+            const landmarkInput = document.getElementById('reg-host-landmark').value;
+            const locationInput = document.getElementById('reg-host-location').value;
+
+            // 1. Extract existing host collection array to append new nodes cleanly
+            let storedKiosks = JSON.parse(localStorage.getItem("kika_kiosks")) || DEFAULT_KIOSKS;
+            
+            const newHostId = `kio_${nameInput.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+            const customHost = {
+                id: newHostId,
+                name: nameInput,
+                locationId: locationInput,
+                landmark: `📍 ${landmarkInput}`,
+                online: true,
+                basePrice: 150,
+                solarActive: true,
+                solarCapacityKW: 6.0,
+                earningsToday: 0.00,
+                momoBalance: 0.00,
+                rackSlots: [
+                    { id: 1, pct: 100, status: "ready" },
+                    { id: 2, pct: 100, status: "ready" },
+                    { id: 3, pct: 0, status: "empty" },
+                    { id: 4, pct: 30, status: "charging" }
+                ]
             };
 
+            // 2. Put the user's custom kiosk at the top of the grid and save to DB
+            storedKiosks.unshift(customHost);
+            localStorage.setItem("kika_kiosks", JSON.stringify(storedKiosks));
+            kiosks = storedKiosks; // Update the runtime database cache index reference
+
+            // 3. Serialize telemetry array packet matching your protocol rules
+            const hPkg = { ACT: "HOST_REG", NODE: newHostId, LOC: locationInput };
+            const pkt = serializePacket("REGISTER_HOST", hPkg);
+            logConsole(`Locally index-mapped custom Solar Host: ${pkt}`, "system");
+            updateTelemetrySize(pkt);
+
+            // 4. Fallback backend server logging capture pool
             try {
-                const response = await fetch('/api/register-host', {
+                await fetch('/api/register-host', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify({ name: nameInput, landmark: landmarkInput, location: locationInput })
                 });
-
-                if (response.ok) {
-                    const result = await response.json();
-                    logToConsole(`Solar Host registered. Station: ${result.host.name}`, 'system-log');
-
-                    // Dynamically map values into existing DOM framework elements
-                    document.getElementById('host-kiosk-title').textContent = result.host.name;
-                    document.getElementById('host-kiosk-landmark').textContent = `📍 ${result.host.landmark}`;
-                    document.getElementById('profile-kiosk-name').value = result.host.name;
-                    document.getElementById('profile-landmark').value = result.host.landmark;
-                    document.getElementById('profile-location-id').value = result.host.location;
-                    document.getElementById('host-earn-today').textContent = `KES 0.00`;
-                    document.getElementById('host-momo-payout-bal').textContent = `KES 0.00`;
-
-                    // View State Transformation matching your layout constraints
-                    viewLanding.classList.add('hidden');
-                    viewHost.classList.remove('hidden');
-                    roleBadge.textContent = 'Solar Host';
-                    roleBadge.className = 'badge-role host-bg';
-                    if (logoutBtn) logoutBtn.classList.remove('hidden');
-                }
-            } catch (error) {
-                logToConsole(`Host registration communication error.`, 'offline');
+            } catch (err) {
+                // Safe offline execution wrapper
             }
+
+            // 5. Update global UI dashboard headers and layout parameters natively
+            document.getElementById("host-kiosk-title").textContent = customHost.name;
+            document.getElementById("host-kiosk-landmark").textContent = customHost.landmark;
+            document.getElementById("profile-kiosk-name").value = customHost.name;
+            document.getElementById("profile-landmark").value = customHost.landmark;
+            document.getElementById("profile-base-price").value = customHost.basePrice;
+            document.getElementById("profile-location-id").value = customHost.locationId;
+            
+            // 6. View Switch Transformations
+            viewLanding.classList.add('hidden');
+            viewHost.classList.remove('hidden');
+            roleBadge.textContent = 'Solar Host';
+            roleBadge.className = 'badge-role host';
+            if (logoutBtn) logoutBtn.classList.remove('hidden');
+
+            // 7. Fire runtime components rendering engines
+            renderHostRack();
+            renderHostLedger();
+            renderRiderStations();
         });
     }
 
-    // Wire standard Switch Portal logout navigation button
+    // Nav-logout view switcher mapping synchronization
     if (logoutBtn) {
         logoutBtn.addEventListener('click', () => {
             viewRider.classList.add('hidden');
